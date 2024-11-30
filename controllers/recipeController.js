@@ -1,13 +1,27 @@
 const Recipe = require('../models/recipes');
+const Joi = require('joi')
+
+const recipeValidation = Joi.object({
+  title: Joi.string().min(3).max(255).required(),
+  ingredients: Joi.array().items(Joi.string().required()).min(1).required(),
+  instructions: Joi.string().min(10).required(),
+  category: Joi.string().valid('Appetizer', 'Main Course', 'Dessert').required(),
+  cookingTime: Joi.number().min(1).required()
+});
 
 
 exports.createRecipe = async (req, res) => {
+  const { error } = recipeValidation.validate(req.body);
+  if (error) {
+    return res.status(400).json({ message: error.details[0].message });
+  }
+
   try {
     const recipe = new Recipe(req.body);
     await recipe.save();
     res.status(201).json(recipe);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(500).json({ message: 'Failed to create recipe. Please try again later.' });
   }
 };
 
